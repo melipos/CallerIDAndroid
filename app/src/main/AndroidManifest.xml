@@ -2,6 +2,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.example.calllogger">
 
+    <!-- Gerekli izinler -->
     <uses-permission android:name="android.permission.READ_PHONE_STATE"/>
     <uses-permission android:name="android.permission.READ_CALL_LOG"/>
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW"/>
@@ -15,11 +16,12 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.CallerID">
 
+        <!-- Accessibility Service -->
         <service
             android:name=".MyAccessibilityService"
             android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE"
             android:exported="true">
-            
+
             <intent-filter>
                 <action android:name="android.accessibilityservice.AccessibilityService" />
             </intent-filter>
@@ -29,11 +31,8 @@
                 android:resource="@xml/accessibility_service_config" />
         </service>
 
+        <!-- Diğer servisler veya activity’ler buraya eklenebilir -->
+
     </application>
 
 </manifest>
-
-
-
-
-
