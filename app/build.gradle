@@ -1,26 +1,16 @@
-
-plugins {
-    id 'com.android.application'
-}
-
-android {
-    namespace 'com.example.calllogger'
-    compileSdk 34
-
-    defaultConfig {
-        applicationId "com.example.calllogger"
-        minSdk 26
-        targetSdk 34
-        versionCode 1
-        versionName "1.0"
+buildscript {
+    repositories {
+        google()
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:8.2.0'
     }
 }
 
-dependencies {
-    implementation 'androidx.core:core-ktx:1.12.0'
-        def appcompat_version = "1.1.0"
-
-    implementation "androidx.appcompat:appcompat:$appcompat_version"
-    // For loading and tinting drawables on older versions of the platform
-    implementation "androidx.appcompat:appcompat-resources:$appcompat_version"
+allprojects {
+    repositories {
+        google()
+        mavenCentral()
+    }
 }
