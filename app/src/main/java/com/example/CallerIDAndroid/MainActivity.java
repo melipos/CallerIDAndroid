@@ -1,11 +1,13 @@
 package com.example.CallerIDAndroid;
 
-import androidx.appcompat.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.Toast;
-import java.io.PrintWriter;
+import androidx.appcompat.app.AppCompatActivity;
+
+import java.io.OutputStream;
 import java.net.Socket;
 
 // Kendi projenin R sınıfı
@@ -13,8 +15,10 @@ import com.example.CallerIDAndroid.R;
 
 public class MainActivity extends AppCompatActivity {
 
-    // Delphi PC IP adresi ve port
-    private static final String DELPHI_IP = "192.168.1.12"; // kendi PC LAN IP
+    private EditText editNumber;
+    private Button btnSendTest;
+
+    private static final String DELPHI_IP = "192.168.1.12"; // Delphi PC LAN IP
     private static final int DELPHI_PORT = 20000;
 
     @Override
@@ -22,28 +26,36 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        // Buton oluştur veya layout’da ekli buton
-        Button btnSendTest = findViewById(R.id.btnSendTest);
+        editNumber = findViewById(R.id.editNumber);
+        btnSendTest = findViewById(R.id.btnSendTest);
 
         btnSendTest.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                sendTestNumber("5551234567"); // test numarası
+                String number = editNumber.getText().toString().trim();
+                if (!number.isEmpty()) {
+                    sendNumberToDelphi(number);
+                } else {
+                    Toast.makeText(MainActivity.this, "Numara giriniz", Toast.LENGTH_SHORT).show();
+                }
             }
         });
     }
 
-    // TCP client ile numara gönder
-    private void sendTestNumber(final String number) {
+    private void sendNumberToDelphi(String number) {
         new Thread(() -> {
+            Socket socket = null;
             try {
-                Socket socket = new Socket(DELPHI_IP, DELPHI_PORT);
-                PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
-                out.println(number); // numarayı gönder
-                socket.close();
+                socket = new Socket(DELPHI_IP, DELPHI_PORT);
+
+                // Delphi6 Indy9 ile uyumlu byte gönderimi
+                OutputStream out = socket.getOutputStream();
+                String data = number + "\n"; // ReadLn ile uyumlu
+                out.write(data.getBytes("ISO-8859-1"));
+                out.flush();
 
                 runOnUiThread(() ->
-                        Toast.makeText(MainActivity.this, "Numara gönderildi", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(MainActivity.this, "Numara gönderildi: " + number, Toast.LENGTH_SHORT).show()
                 );
 
             } catch (Exception e) {
@@ -51,6 +63,13 @@ public class MainActivity extends AppCompatActivity {
                 runOnUiThread(() ->
                         Toast.makeText(MainActivity.this, "Hata: " + e.getMessage(), Toast.LENGTH_LONG).show()
                 );
+            } finally {
+                try {
+                    if (socket != null)
+                        socket.close();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
             }
         }).start();
     }
