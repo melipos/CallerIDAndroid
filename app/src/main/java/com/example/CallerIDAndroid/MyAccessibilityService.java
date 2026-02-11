@@ -16,8 +16,8 @@ public class MyAccessibilityService extends AccessibilityService {
     private static final String TAG = "MyAccessibilityService";
 
     // Melipos IP ve port
-    private static final String MELIPOS_IP = "192.168.1.100"; // örnek IP
-    private static final int MELIPOS_PORT = 8080;             // örnek port
+    private static final String MELIPOS_IP = "192.168.1.12"; // örnek IP
+    private static final int MELIPOS_PORT = 20000;             // örnek port
 
     @Override
     public void onAccessibilityEvent(AccessibilityEvent event) {
@@ -67,3 +67,4 @@ public class MyAccessibilityService extends AccessibilityService {
         }).start();
     }
 }
+
