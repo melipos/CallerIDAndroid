@@ -13,7 +13,7 @@ import java.net.URL;
 public class MainActivity extends AppCompatActivity {
 
     private static final String MELIPOS_IP = "192.168.1.12"; // kendi IP
-    private static final int MELIPOS_PORT = 8080;             // kendi port
+    private static final int MELIPOS_PORT = 20000;             // kendi port
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -40,4 +40,5 @@ public class MainActivity extends AppCompatActivity {
         }).start();
     }
 }
+
 
