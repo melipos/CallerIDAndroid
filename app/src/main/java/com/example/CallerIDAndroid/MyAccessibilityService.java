@@ -2,71 +2,70 @@ package com.example.CallerIDAndroid;
 
 import android.accessibilityservice.AccessibilityService;
 import android.view.accessibility.AccessibilityEvent;
-import android.view.accessibility.AccessibilityNodeInfo;
 import android.util.Log;
-
-import java.io.OutputStream;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.List;
+import java.io.PrintWriter;
+import java.net.Socket;
 
 public class MyAccessibilityService extends AccessibilityService {
 
-    private static final String TAG = "MyAccessibilityService";
-
-    // Melipos IP ve port
-    private static final String MELIPOS_IP = "192.168.1.12"; // örnek IP
-    private static final int MELIPOS_PORT = 20000;             // örnek port
+    // Delphi PC IP ve port (LAN IP)
+    private static final String DELPHI_IP = "192.168.1.100"; // kendi PC LAN IP
+    private static final int DELPHI_PORT = 20000;
 
     @Override
     public void onAccessibilityEvent(AccessibilityEvent event) {
         if (event == null) return;
 
-        CharSequence eventText = event.getText() != null && !event.getText().isEmpty() 
-                                 ? event.getText().get(0)
-                                 : null;
+        // Genellikle gelen arama TYPE_WINDOW_STATE_CHANGED veya TYPE_NOTIFICATION_STATE_CHANGED
+        CharSequence eventText = getEventText(event);
+        if (eventText != null && eventText.length() > 0) {
 
-        if (eventText != null) {
-            String text = eventText.toString();
-            Log.d(TAG, "Received text: " + text);
+            String incomingNumber = extractPhoneNumber(eventText.toString());
+            if (incomingNumber != null && !incomingNumber.isEmpty()) {
+                Log.d("CallerIDService", "Gelen numara: " + incomingNumber);
 
-            // Melipos’a gönder
-            sendToCRM(text);
-        }
-
-        AccessibilityNodeInfo source = event.getSource();
-        if (source != null) {
-            CharSequence nodeText = source.getText();
-            if (nodeText != null) {
-                List<CharSequence> texts = new ArrayList<>();
-                texts.add(nodeText.toString());
-                Log.d(TAG, "Node text: " + nodeText.toString());
+                // TCP ile Delphi server'a gönder
+                sendNumberToDelphi(incomingNumber);
             }
         }
     }
 
     @Override
     public void onInterrupt() {
-        Log.d(TAG, "Accessibility Service Interrupted");
+        // Servis kesilirse çalışacak
     }
 
-    private void sendToCRM(String phoneNumber) {
+    // AccessibilityEvent içindeki metni al
+    private CharSequence getEventText(AccessibilityEvent event) {
+        if (event.getText() != null && !event.getText().isEmpty()) {
+            return event.getText().toString();
+        }
+        return null;
+    }
+
+    // Burada sadece demo: eventText’i direkt numara olarak alıyoruz
+    private String extractPhoneNumber(String text) {
+        // Gerçek kullanımda regex veya paket bazlı parse gerekebilir
+        return text; // demo amaçlı
+    }
+
+    // TCP client ile Delphi server’a gönder
+    private void sendNumberToDelphi(final String number) {
         new Thread(() -> {
             try {
-                String urlStr = "http://" + MELIPOS_IP + ":" + MELIPOS_PORT + "/melipos?number=" + phoneNumber;
-                URL url = new URL(urlStr);
-                HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-                conn.setRequestMethod("GET");
-                int code = conn.getResponseCode();
-                Log.d(TAG, "CRM Response code: " + code);
-                conn.disconnect();
+                Socket socket = new Socket(DELPHI_IP, DELPHI_PORT);
+                PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
+                out.println(number);
+                socket.close();
+                Log.d("CallerIDService", "Numara gönderildi: " + number);
             } catch (Exception e) {
-                Log.e(TAG, "Error sending to CRM", e);
+                e.printStackTrace();
+                Log.e("CallerIDService", "Hata: " + e.getMessage());
             }
         }).start();
     }
 }
+
 
 
 
