@@ -3,69 +3,63 @@ package com.example.CallerIDAndroid;
 import android.accessibilityservice.AccessibilityService;
 import android.view.accessibility.AccessibilityEvent;
 import android.util.Log;
-import java.io.PrintWriter;
+
+import java.io.OutputStream;
 import java.net.Socket;
+
+// Kendi projenin R sınıfı
+import com.example.CallerIDAndroid.R;
 
 public class MyAccessibilityService extends AccessibilityService {
 
-    // Delphi PC IP ve port (LAN IP)
-    private static final String DELPHI_IP = "192.168.1.100"; // kendi PC LAN IP
+    private static final String DELPHI_IP = "192.168.1.12"; // Delphi PC LAN IP
     private static final int DELPHI_PORT = 20000;
 
     @Override
     public void onAccessibilityEvent(AccessibilityEvent event) {
-        if (event == null) return;
+        if(event.getEventType() == AccessibilityEvent.TYPE_NOTIFICATION_STATE_CHANGED
+           || event.getEventType() == AccessibilityEvent.TYPE_VIEW_TEXT_CHANGED) {
 
-        // Genellikle gelen arama TYPE_WINDOW_STATE_CHANGED veya TYPE_NOTIFICATION_STATE_CHANGED
-        CharSequence eventText = getEventText(event);
-        if (eventText != null && eventText.length() > 0) {
+            CharSequence text = event.getText().toString();
 
-            String incomingNumber = extractPhoneNumber(eventText.toString());
-            if (incomingNumber != null && !incomingNumber.isEmpty()) {
-                Log.d("CallerIDService", "Gelen numara: " + incomingNumber);
+            if(text != null && text.length() > 0) {
+                String number = text.toString();
+                Log.d("CallerIDAndroid", "Gelen numara: " + number);
 
-                // TCP ile Delphi server'a gönder
-                sendNumberToDelphi(incomingNumber);
+                sendNumberToDelphi(number);
             }
         }
     }
 
     @Override
     public void onInterrupt() {
-        // Servis kesilirse çalışacak
+        Log.d("CallerIDAndroid", "AccessibilityService kesildi.");
     }
 
-    // AccessibilityEvent içindeki metni al
-    private CharSequence getEventText(AccessibilityEvent event) {
-        if (event.getText() != null && !event.getText().isEmpty()) {
-            return event.getText().toString();
-        }
-        return null;
-    }
-
-    // Burada sadece demo: eventText’i direkt numara olarak alıyoruz
-    private String extractPhoneNumber(String text) {
-        // Gerçek kullanımda regex veya paket bazlı parse gerekebilir
-        return text; // demo amaçlı
-    }
-
-    // TCP client ile Delphi server’a gönder
-    private void sendNumberToDelphi(final String number) {
+    private void sendNumberToDelphi(String number) {
         new Thread(() -> {
+            Socket socket = null;
             try {
-                Socket socket = new Socket(DELPHI_IP, DELPHI_PORT);
-                PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
-                out.println(number);
-                socket.close();
-                Log.d("CallerIDService", "Numara gönderildi: " + number);
+                socket = new Socket(DELPHI_IP, DELPHI_PORT);
+
+                OutputStream out = socket.getOutputStream();
+                String data = number + "\n"; // Delphi ReadLn ile uyumlu
+                out.write(data.getBytes("ISO-8859-1"));
+                out.flush();
+
+                Log.d("CallerIDAndroid", "Numara gönderildi: " + number);
+
             } catch (Exception e) {
                 e.printStackTrace();
-                Log.e("CallerIDService", "Hata: " + e.getMessage());
+                Log.e("CallerIDAndroid", "Hata: " + e.getMessage());
+            } finally {
+                try {
+                    if (socket != null)
+                        socket.close();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
             }
         }).start();
     }
 }
-
-
-
-
